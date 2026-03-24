@@ -5,20 +5,24 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.JoinColumn;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
-@Table(name = "students")
-public class Student {
+@Table(name = "research_groups")
+public class ResearchGroup {
 
     @Id
-    private String studentId; // matricula
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    private String dni;
     private String name;
+    private Integer memberCount;
 
+    @OneToMany(mappedBy = "researchGroup")
+    private List<Student> students;
 }

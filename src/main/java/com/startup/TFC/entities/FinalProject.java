@@ -12,13 +12,19 @@ import jakarta.persistence.JoinColumn;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "students")
-public class Student {
+@Table(name = "final_projects")
+public class FinalProject {
 
     @Id
-    private String studentId; // matricula
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    private String dni;
-    private String name;
+    private String topic;
+    private Integer orderNumber;
+    private LocalDate startDate;
 
+    // One-to-One with Student
+    @OneToOne
+    @JoinColumn(name = "student_id")
+    private Student student;
 }
