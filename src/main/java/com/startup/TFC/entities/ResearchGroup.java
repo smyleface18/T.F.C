@@ -1,17 +1,14 @@
 package com.startup.TFC.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.Id;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.JoinColumn;
-
-import java.time.LocalDate;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.util.List;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Data
 @Entity
 @Table(name = "research_groups")
 public class ResearchGroup {
@@ -20,9 +17,9 @@ public class ResearchGroup {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column
     private String name;
-    private Integer memberCount;
 
-    @OneToMany(mappedBy = "researchGroup")
+    @ManyToMany(mappedBy = "researchGroup")
     private List<Student> students;
 }

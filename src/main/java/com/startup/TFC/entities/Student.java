@@ -1,24 +1,46 @@
 package com.startup.TFC.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.Id;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.JoinColumn;
+import jakarta.persistence.*;
+import lombok.*;
+import java.util.List;
 
-import java.time.LocalDate;
-
+@NoArgsConstructor
+@AllArgsConstructor
+@Data
 @Entity
 @Table(name = "students")
 public class Student {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private String studentId; // matricula
 
+    @Column(nullable = false)
     private String dni;
+
+    @Column(nullable = false)
     private String name;
 
+    @OneToOne(mappedBy = "student")
+    private FinalProject finalProject;
+
+    @ManyToOne
+    @JoinColumn(name = "director_dni")
+    private Professor director;
+
+    @ManyToMany
+    @JoinTable(
+            name = "student_professor_help",
+            joinColumns = @JoinColumn(name = "student_id"),
+            inverseJoinColumns = @JoinColumn(name = "profesor_dni")
+    )
+    private List<Professor> helpers;
+
+    @ManyToMany
+    @JoinTable(
+            name = "student_professor_help",
+            joinColumns = @JoinColumn(name = "student_id"),
+            inverseJoinColumns = @JoinColumn(name = "profesor_dni")
+    )
+    private List<ResearchGroup> researchGroup;
 }

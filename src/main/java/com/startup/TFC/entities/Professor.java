@@ -1,20 +1,16 @@
 package com.startup.TFC.entities;
 
-import com.startup.TFC.entities.Committee;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.Id;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
+
 import java.util.List;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Data
 @Entity
 @Table(name = "professors")
 public class Professor {
@@ -22,19 +18,23 @@ public class Professor {
     @Id
     private String dni;
 
+    @Column
     private String name;
+
+    @Column
     private String address;
 
-    // Professor directs students
-    @OneToMany
-    @JoinColumn(name = "director_dni")
-    private List<Student> supervisedStudents;
+    @Column(nullable = false)
+    private String area;
+
 
     // Many-to-Many with Committee
     @ManyToMany(mappedBy = "professors")
     private List<Committee> committees;
 
-    // Professors who help students
-    @ManyToMany(mappedBy = "helpingProfessors")
-    private List<FinalProject> assistedProject;
+    @OneToMany(mappedBy = "director")
+    private List<Student> supervisedStudents;
+
+    @ManyToMany(mappedBy = "helpers")
+    private List<Student> helpedStudents;
 }
