@@ -19,21 +19,20 @@ public class Committee {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private String examLocation;
 
     @Column
-    private String examLocation;
     private Integer memberCount;
 
-    // Many-to-Many with Professors
     @ManyToMany
     @JoinTable(
-        name = "committee_professor",
-        joinColumns = @JoinColumn(name = "committee_id"),
-        inverseJoinColumns = @JoinColumn(name = "professor_id")
+            name = "committee_professor",
+            joinColumns = @JoinColumn(name = "committee_id"),
+            inverseJoinColumns = @JoinColumn(name = "professor_dni")
     )
     private List<Professor> professors;
 
-    // One Committee has many defenses
     @OneToMany(mappedBy = "committee")
     private List<Defense> defenses;
 }

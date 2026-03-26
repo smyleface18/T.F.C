@@ -36,11 +36,7 @@ public class Student {
     )
     private List<Professor> helpers;
 
-    @ManyToMany
-    @JoinTable(
-            name = "student_professor_help",
-            joinColumns = @JoinColumn(name = "student_id"),
-            inverseJoinColumns = @JoinColumn(name = "profesor_dni")
-    )
-    private List<ResearchGroup> researchGroup;
+    @ManyToOne
+    @JoinColumn(name = "research_group_id")
+    private ResearchGroup researchGroup;
 }

@@ -20,6 +20,6 @@ public class ResearchGroup {
     @Column
     private String name;
 
-    @ManyToMany(mappedBy = "researchGroup")
+    @OneToMany(mappedBy = "researchGroup")
     private List<Student> students;
 }

@@ -20,17 +20,20 @@ public class Defense {
     private Long id;
 
     @Column
+    @Temporal(TemporalType.DATE)
     private Date defenseDate;
 
     @ManyToOne
     @JoinColumn(name = "committee_id")
     private Committee committee;
 
-    @OneToOne
+    // Qué alumno se presenta
+    @ManyToOne
     @JoinColumn(name = "student_id")
     private Student student;
 
-    @OneToOne
+    // Con qué TFC
+    @ManyToOne
     @JoinColumn(name = "project_id")
     private FinalProject finalProject;
 }

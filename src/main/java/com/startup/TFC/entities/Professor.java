@@ -18,7 +18,7 @@ public class Professor {
     @Id
     private String dni;
 
-    @Column
+    @Column(nullable = false)
     private String name;
 
     @Column
@@ -27,13 +27,14 @@ public class Professor {
     @Column(nullable = false)
     private String area;
 
-    // Many-to-Many with Committee
     @ManyToMany(mappedBy = "professors")
     private List<Committee> committees;
 
+    // Alumnos que dirige
     @OneToMany(mappedBy = "director")
     private List<Student> supervisedStudents;
 
+    // Alumnos a los que ayuda (sin dirigir)
     @ManyToMany(mappedBy = "helpers")
     private List<Student> helpedStudents;
 }

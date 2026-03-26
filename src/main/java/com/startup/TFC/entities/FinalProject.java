@@ -19,13 +19,14 @@ public class FinalProject {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column()
+    @Column(nullable = false)
     private String topic;
 
-    @Column()
+    @Column
+    @Temporal(TemporalType.DATE)
     private Date initDate;
 
-    // One-to-One with Student
+    // Relación 1:1 con Student - un TFC solo lo realiza un alumno
     @OneToOne
     @JoinColumn(name = "student_id", unique = true)
     private Student student;
