@@ -2,6 +2,7 @@ package com.startup.TFC.views;
 
 import com.startup.TFC.entities.ResearchGroup;
 import com.startup.TFC.services.ServiceResearchGroup;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -9,7 +10,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 public class ResearchGroupFrame extends BaseCrudFrame {
@@ -19,8 +20,12 @@ public class ResearchGroupFrame extends BaseCrudFrame {
 
     @Autowired
     public ResearchGroupFrame(ServiceResearchGroup serviceGroup) {
-        super("Gestión de Grupos de Investigación", 580, 380);
+        super("Gestión de Grupos de Investigación", 620, 420);
         this.serviceGroup = serviceGroup;
+    }
+
+    @PostConstruct
+    public void init() {
         loadData();
     }
 
@@ -28,8 +33,7 @@ public class ResearchGroupFrame extends BaseCrudFrame {
     protected void initColumns() {
         tableModel.addColumn("ID");
         tableModel.addColumn("Nombre");
-        tableModel.addColumn("Nº Componentes");
-        tableModel.addColumn("Alumnos inscritos");
+        tableModel.addColumn("Alumnos inscritos"); // ahora solo usamos alumnos
     }
 
     @Override
@@ -37,18 +41,23 @@ public class ResearchGroupFrame extends BaseCrudFrame {
         tableModel.setRowCount(0);
         rowIds.clear();
         for (ResearchGroup g : serviceGroup.findAll()) {
-            int studentCount = g.getStudents() != null ? g.getStudents().size() : 0;
+            List<String> studentNames = g.getStudents().stream()
+                    .map(student -> student.getName() + ", DNI: " + student.getDni())
+                    .toList();
             tableModel.addRow(new Object[]{
                     g.getId(),
                     g.getName(),
-                    studentCount
+                    studentNames.toString()
             });
             rowIds.add(g.getId());
         }
+        updateCount();
     }
 
     @Override
-    protected void showAddDialog() { showGroupDialog(null); }
+    protected void showAddDialog() {
+        showGroupDialog(null);
+    }
 
     @Override
     protected void showEditDialog(int row) {
@@ -63,51 +72,48 @@ public class ResearchGroupFrame extends BaseCrudFrame {
     private void showGroupDialog(ResearchGroup existing) {
         boolean isEdit = existing != null;
         JDialog dialog = new JDialog(this, isEdit ? "Editar Grupo" : "Nuevo Grupo de Investigación", true);
-        dialog.setSize(370, 200);
+        dialog.setSize(400, 210);
         dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout(8, 8));
 
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 10, 15));
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBorder(BorderFactory.createEmptyBorder(16, 16, 8, 16));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(7, 5, 7, 5);
+        gbc.insets = new Insets(8, 5, 8, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        JTextField txtName  = new JTextField(isEdit ? existing.getName() : "", 20);
+        JTextField txtName = new JTextField(isEdit ? existing.getName() : "", 22);
+        JTextField txtCount = new JTextField(
+                isEdit && existing.getStudents() != null ? String.valueOf(existing.getStudents().size()) : "",
+                8
+        );
 
+        addFormRow(form, gbc, 0, "Nombre del grupo *:", txtName);
+        addFormRow(form, gbc, 1, "Alumnos inscritos:", txtCount);
 
-        addRow(panel, gbc, 0, "Nombre del grupo *:", txtName);
-
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnSave = new JButton("Guardar");
-        btnSave.setBackground(new Color(46, 139, 87));
-        btnSave.setForeground(Color.WHITE);
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
+        JButton btnSave = createSaveButton();
         JButton btnCancel = new JButton("Cancelar");
-        btnPanel.add(btnSave); btnPanel.add(btnCancel);
+        btnPanel.add(btnCancel);
+        btnPanel.add(btnSave);
         btnCancel.addActionListener(e -> dialog.dispose());
 
         btnSave.addActionListener(e -> {
             String name = txtName.getText().trim();
             if (name.isEmpty()) {
-                JOptionPane.showMessageDialog(dialog, "El nombre es obligatorio.", "Error", JOptionPane.ERROR_MESSAGE);
+                showError("El nombre es obligatorio.");
                 return;
             }
             ResearchGroup g = isEdit ? existing : new ResearchGroup();
             g.setName(name);
+            // No seteamos count manualmente, ya que depende de la lista de alumnos
             serviceGroup.save(g);
             loadData();
             dialog.dispose();
         });
 
-        dialog.setLayout(new BorderLayout());
-        dialog.add(panel, BorderLayout.CENTER);
+        dialog.add(form, BorderLayout.CENTER);
         dialog.add(btnPanel, BorderLayout.SOUTH);
         dialog.setVisible(true);
-    }
-
-    private void addRow(JPanel p, GridBagConstraints gbc, int row, String label, JComponent field) {
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.45;
-        p.add(new JLabel(label), gbc);
-        gbc.gridx = 1; gbc.weightx = 0.55;
-        p.add(field, gbc);
     }
 }

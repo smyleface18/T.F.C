@@ -30,11 +30,11 @@ public class Professor {
     @ManyToMany(mappedBy = "professors")
     private List<Committee> committees;
 
-    // Alumnos que dirige
-    @OneToMany(mappedBy = "director")
-    private List<Student> supervisedStudents;
+    // Alumno que dirige
+    @OneToOne(mappedBy = "director", fetch = FetchType.EAGER)
+    private Student supervisedStudent;
 
     // Alumnos a los que ayuda (sin dirigir)
-    @ManyToMany(mappedBy = "helpers")
+    @ManyToMany(mappedBy = "helpers", fetch = FetchType.EAGER)
     private List<Student> helpedStudents;
 }

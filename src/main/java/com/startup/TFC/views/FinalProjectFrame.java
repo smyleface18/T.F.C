@@ -4,6 +4,7 @@ import com.startup.TFC.entities.FinalProject;
 import com.startup.TFC.entities.Student;
 import com.startup.TFC.services.ServiceFinalProject;
 import com.startup.TFC.services.ServiceStudent;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -11,9 +12,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public class FinalProjectFrame extends BaseCrudFrame {
@@ -24,19 +23,21 @@ public class FinalProjectFrame extends BaseCrudFrame {
 
     @Autowired
     public FinalProjectFrame(ServiceFinalProject serviceProject, ServiceStudent serviceStudent) {
-        super("Gestión de Trabajos Fin de Carrera (TFC)", 700, 400);
+        super("Gestión de Trabajos Fin de Carrera", 780, 440);
         this.serviceProject = serviceProject;
         this.serviceStudent = serviceStudent;
-        loadData();
     }
+
+    @PostConstruct
+    public void init() { loadData(); }
 
     @Override
     protected void initColumns() {
         tableModel.addColumn("ID");
         tableModel.addColumn("Tema");
         tableModel.addColumn("Fecha Inicio");
-        tableModel.addColumn("Alumno (Matrícula)");
-        tableModel.addColumn("Alumno (Nombre)");
+        tableModel.addColumn("Matrícula Alumno");
+        tableModel.addColumn("Nombre Alumno");
     }
 
     @Override
@@ -45,123 +46,112 @@ public class FinalProjectFrame extends BaseCrudFrame {
         rowIds.clear();
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
         for (FinalProject fp : serviceProject.findAll()) {
-            String studentInfo = "-";
-            String studentName = "-";
-            if (fp.getStudent() != null) {
-                studentInfo = String.valueOf(fp.getStudent().getStudentId());
-                studentName = fp.getStudent().getName();
-            }
             tableModel.addRow(new Object[]{
                     fp.getId(),
                     fp.getTopic(),
-                    fp.getInitDate() != null ? sdf.format(fp.getInitDate()) : "-",
-                    studentInfo,
-                    studentName
+                    fp.getInitDate() != null ? sdf.format(fp.getInitDate()) : "—",
+                    fp.getStudent() != null ? fp.getStudent().getStudentId() : "—",
+                    fp.getStudent() != null ? fp.getStudent().getName()      : "—"
             });
             rowIds.add(fp.getId());
         }
+        updateCount();
     }
 
-    @Override
-    protected void showAddDialog() { showProjectDialog(null); }
-
-    @Override
-    protected void showEditDialog(int row) {
+    @Override protected void showAddDialog()         { showProjectDialog(null); }
+    @Override protected void showEditDialog(int row) {
         serviceProject.findById(rowIds.get(row)).ifPresent(this::showProjectDialog);
     }
-
-    @Override
-    protected void deleteSelected(int row) {
-        serviceProject.deleteById(rowIds.get(row));
-    }
+    @Override protected void deleteSelected(int row) { serviceProject.deleteById(rowIds.get(row)); }
 
     private void showProjectDialog(FinalProject existing) {
         boolean isEdit = existing != null;
         JDialog dialog = new JDialog(this, isEdit ? "Editar TFC" : "Nuevo TFC", true);
-        dialog.setSize(420, 250);
+        dialog.setSize(500, 270);
         dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout(8, 8));
 
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 10, 15));
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBorder(BorderFactory.createEmptyBorder(16, 16, 8, 16));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(6, 5, 6, 5);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(7, 5, 7, 5);
+        gbc.fill   = GridBagConstraints.HORIZONTAL;
 
-        JTextField txtTopic = new JTextField(isEdit ? existing.getTopic() : "", 20);
+        JTextField txtTopic = new JTextField(isEdit ? existing.getTopic() : "", 24);
         JTextField txtDate  = new JTextField(
                 isEdit && existing.getInitDate() != null
-                        ? new SimpleDateFormat("dd/MM/yyyy").format(existing.getInitDate())
-                        : "", 20);
+                        ? new SimpleDateFormat("dd/MM/yyyy").format(existing.getInitDate()) : "", 12);
 
-        // Combo alumno (1:1 — solo alumnos sin TFC asignado o el alumno actual)
-        JComboBox<String> cbStudent = new JComboBox<>();
-        cbStudent.addItem("-- Sin alumno asignado --");
+        // ── Selector de alumno (buscable) ─────────────────────────────────
         List<Student> students = new ArrayList<>();
         for (Student s : serviceStudent.findAll()) {
-            // Mostrar solo alumnos sin TFC, o el alumno ya asignado a este TFC
             boolean isCurrent = isEdit && existing.getStudent() != null
                     && existing.getStudent().getStudentId().equals(s.getStudentId());
             boolean hasTFC = s.getFinalProject() != null;
-            if (!hasTFC || isCurrent) {
-                students.add(s);
-                cbStudent.addItem(s.getStudentId() + " - " + s.getName());
-            }
-        }
-        if (isEdit && existing.getStudent() != null) {
-            for (int i = 0; i < students.size(); i++) {
-                if (students.get(i).getStudentId().equals(existing.getStudent().getStudentId())) {
-                    cbStudent.setSelectedIndex(i + 1);
-                    break;
-                }
-            }
+            if (!hasTFC || isCurrent) students.add(s);
         }
 
-        addRow(panel, gbc, 0, "Tema *:", txtTopic);
-        addRow(panel, gbc, 1, "Fecha inicio (dd/MM/yyyy):", txtDate);
-        addRow(panel, gbc, 2, "Alumno:", cbStudent);
+        Student[] studentHolder = { isEdit ? existing.getStudent() : null };
+        JTextField txtStudentDisplay = new JTextField(
+                studentHolder[0] != null
+                        ? studentHolder[0].getStudentId() + " – " + studentHolder[0].getName() : "", 24);
+        txtStudentDisplay.setEditable(false);
+        txtStudentDisplay.setBackground(new Color(248, 248, 248));
 
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnSave = new JButton("Guardar");
-        btnSave.setBackground(new Color(46, 139, 87));
-        btnSave.setForeground(Color.WHITE);
+        JButton btnPickStudent = new JButton("Buscar...");
+        btnPickStudent.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        btnPickStudent.addActionListener(e -> {
+            SearchablePickerDialog<Student> picker = new SearchablePickerDialog<>(
+                    dialog, "Seleccionar Alumno (sin TFC asignado)",
+                    students,
+                    new String[]{"Matrícula", "DNI", "Nombre"},
+                    s -> new Object[]{s.getStudentId(), s.getDni(), s.getName()}
+            );
+            Student chosen = picker.showAndGet();
+            if (chosen != null) {
+                studentHolder[0] = chosen;
+                txtStudentDisplay.setText(chosen.getStudentId() + " – " + chosen.getName());
+            }
+        });
+        JButton btnClearStudent = new JButton("✕");
+        btnClearStudent.setFont(new Font("SansSerif", Font.PLAIN, 10));
+        btnClearStudent.setMargin(new Insets(2, 4, 2, 4));
+        btnClearStudent.addActionListener(e -> { studentHolder[0] = null; txtStudentDisplay.setText(""); });
+
+        JPanel studentPanel = new JPanel(new BorderLayout(4, 0));
+        studentPanel.add(txtStudentDisplay, BorderLayout.CENTER);
+        JPanel sBtns = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+        sBtns.add(btnPickStudent); sBtns.add(btnClearStudent);
+        studentPanel.add(sBtns, BorderLayout.EAST);
+
+        addFormRow(form, gbc, 0, "Tema *:",                   txtTopic);
+        addFormRow(form, gbc, 1, "Fecha inicio (dd/MM/yyyy):", txtDate);
+        addFormRow(form, gbc, 2, "Alumno:",                   studentPanel);
+
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
+        JButton btnSave   = createSaveButton();
         JButton btnCancel = new JButton("Cancelar");
-        btnPanel.add(btnSave); btnPanel.add(btnCancel);
+        btnPanel.add(btnCancel); btnPanel.add(btnSave);
         btnCancel.addActionListener(e -> dialog.dispose());
 
         btnSave.addActionListener(e -> {
             String topic = txtTopic.getText().trim();
-            if (topic.isEmpty()) {
-                JOptionPane.showMessageDialog(dialog, "El tema es obligatorio.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+            if (topic.isEmpty()) { showError("El tema es obligatorio."); return; }
             FinalProject fp = isEdit ? existing : new FinalProject();
             fp.setTopic(topic);
-            String dateStr = txtDate.getText().trim();
-            if (!dateStr.isEmpty()) {
-                try {
-                    fp.setInitDate(new SimpleDateFormat("dd/MM/yyyy").parse(dateStr));
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(dialog, "Formato de fecha incorrecto. Use dd/MM/yyyy.", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
+            String ds = txtDate.getText().trim();
+            if (!ds.isEmpty()) {
+                try { fp.setInitDate(new SimpleDateFormat("dd/MM/yyyy").parse(ds)); }
+                catch (Exception ex) { showError("Formato de fecha incorrecto. Use dd/MM/yyyy."); return; }
             }
-            int idx = cbStudent.getSelectedIndex();
-            fp.setStudent(idx > 0 ? students.get(idx - 1) : null);
+            fp.setStudent(studentHolder[0]);
             serviceProject.save(fp);
             loadData();
             dialog.dispose();
         });
 
-        dialog.setLayout(new BorderLayout());
-        dialog.add(panel, BorderLayout.CENTER);
+        dialog.add(form, BorderLayout.CENTER);
         dialog.add(btnPanel, BorderLayout.SOUTH);
         dialog.setVisible(true);
-    }
-
-    private void addRow(JPanel p, GridBagConstraints gbc, int row, String label, JComponent field) {
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.4;
-        p.add(new JLabel(label), gbc);
-        gbc.gridx = 1; gbc.weightx = 0.6;
-        p.add(field, gbc);
     }
 }

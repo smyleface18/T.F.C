@@ -27,7 +27,7 @@ public class Student {
     @OneToOne(mappedBy = "student")
     private FinalProject finalProject;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "director_dni")
     private Professor director;
 
