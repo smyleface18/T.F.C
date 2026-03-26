@@ -27,7 +27,6 @@ public class Professor {
     @Column(nullable = false)
     private String area;
 
-
     // Many-to-Many with Committee
     @ManyToMany(mappedBy = "professors")
     private List<Committee> committees;
