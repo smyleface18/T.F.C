@@ -9,18 +9,43 @@ services:
     environment:
       SA_PASSWORD: "YourStrong@Password123"
       ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
 
     ports:
       - "1433:1433"
 
     volumes:
       - sqlserver_data:/var/opt/mssql
+      - ./src/main/resources/migration/init.sql:/migration/init.sql    # ruta consistente con el command
 
-    networks:
-      - sqlserver_network
+    healthcheck:
+      test: >
+        /opt/mssql-tools18/bin/sqlcmd
+        -S localhost -U sa -P "YourStrong@Password123"
+        -C -Q "SELECT 1" -b
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+    command: >
+      /bin/bash -c "
+        /opt/mssql/bin/sqlservr &
+        MSSQL_PID=$$!
+      
+        echo '>>> Esperando SQL Server...'
+        for i in $$(seq 1 30); do
+          /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong@Password123' -C -Q 'SELECT 1' -b > /dev/null 2>&1 && break
+          echo \"  intento $$i/30, esperando 5s...\"
+          sleep 5
+        done
+      
+        echo '>>> Ejecutando init.sql...'
+        /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong@Password123' -C -i /migration/init.sql -b
+        echo '>>> init.sql ejecutado.'
+      
+        wait $$MSSQL_PID
+      "
 
 volumes:
   sqlserver_data:
-
-networks:
-  sqlserver_network:

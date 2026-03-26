@@ -2,18 +2,21 @@ package com.startup.TFC.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Entity
-@Table(name = "students")
+@Table(name = "student")
 public class Student {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String studentId; // matricula
+    private Long studentId; // matricula
 
     @Column(nullable = false)
     private String dni;
@@ -39,4 +42,7 @@ public class Student {
     @ManyToOne
     @JoinColumn(name = "research_group_id")
     private ResearchGroup researchGroup;
+
+
+    private Date groupJoinDate;
 }
